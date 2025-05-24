@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>shOck lOOps</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Courier New", monospace;
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                color: #00ff41;
+                padding: 20px;
+                min-height: 100vh;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: rgba(0, 0, 0, 0.7);
+                border: 2px solid #00ff41;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+            }
+
+            h1 {
+                text-align: center;
+                margin-bottom: 30px;
+                text-shadow: 0 0 10px #00ff41;
+                font-size: 2.5em;
+            }
+
+            .controls {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
+            }
+
+            button {
+                background: linear-gradient(45deg, #0066cc, #004499);
+                border: 2px solid #00ff41;
+                color: #00ff41;
+                padding: 12px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: bold;
+                transition: all 0.3s;
+                font-size: 16px;
+            }
+
+            button:hover {
+                background: linear-gradient(45deg, #0088ff, #0066cc);
+                box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+                transform: translateY(-2px);
+            }
+
+            button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .export-status {
+                text-align: center;
+                margin-top: 10px;
+                color: #ffaa00;
+                font-weight: bold;
+            }
+
+            .sequencer {
+                margin-bottom: 30px;
+                overflow-x: auto;
+            }
+
+            .track {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+                gap: 10px;
+            }
+
+            .track-label {
+                width: 120px;
+                font-weight: bold;
+                text-align: right;
+                color: #ffaa00;
+                text-shadow: 0 0 5px #ffaa00;
+            }
+
+            .steps {
+                display: flex;
+                gap: 4px;
+            }
+
+            .step {
+                width: 40px;
+                height: 40px;
+                border: 2px solid #333;
+                background: rgba(0, 0, 0, 0.5);
+                cursor: pointer;
+                border-radius: 6px;
+                transition: all 0.2s;
+                position: relative;
+            }
+
+            .step:hover {
+                border-color: #00ff41;
+                background: rgba(0, 255, 65, 0.1);
+            }
+
+            .step.active {
+                background: linear-gradient(45deg, #00ff41, #00cc33);
+                border-color: #00ff41;
+                box-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+            }
+
+            .step.playing {
+                border-color: #ff0066;
+                box-shadow: 0 0 15px rgba(255, 0, 102, 0.8);
+                animation: pulse 0.1s;
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            .waveform-container {
+                margin-top: 30px;
+                border: 2px solid #00ff41;
+                border-radius: 8px;
+                padding: 20px;
+                background: rgba(0, 0, 0, 0.3);
+            }
+
+            .waveform-title {
+                text-align: center;
+                margin-bottom: 15px;
+                color: #00ff41;
+                text-shadow: 0 0 8px #00ff41;
+            }
+
+            .waveform {
+                width: 100%;
+                height: 120px;
+                background: #000;
+                border: 1px solid #333;
+                border-radius: 4px;
+            }
+
+            .tempo-control {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 20px;
+                justify-content: center;
+            }
+
+            .tempo-control input {
+                background: rgba(0, 0, 0, 0.7);
+                border: 2px solid #00ff41;
+                color: #00ff41;
+                padding: 8px;
+                border-radius: 4px;
+                font-family: inherit;
+                width: 80px;
+                text-align: center;
+            }
+
+            .tempo-control label {
+                color: #ffaa00;
+                font-weight: bold;
+            }
+
+            @media (max-width: 768px) {
+                .track-label {
+                    width: 80px;
+                    font-size: 12px;
+                }
+
+                .step {
+                    width: 30px;
+                    height: 30px;
+                }
+
+                h1 {
+                    font-size: 1.8em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎵 shOck lOOps 16-BIT LOOP MAKER 🎵</h1>
+
+            <div class="controls">
+                <button id="playBtn">▶️ PLAY</button>
+                <button id="pauseBtn">⏸️ PAUSE</button>
+                <button id="stopBtn">⏹️ STOP</button>
+                <button id="clearBtn">🗑️ CLEAR</button>
+                <button id="exportMidiBtn">💾 EXPORT MIDI</button>
+                <button id="exportAudioBtn">🎵 EXPORT AUDIO</button>
+            </div>
+
+            <div id="exportStatus" class="export-status"></div>
+
+            <div class="tempo-control">
+                <label for="tempoSlider">TEMPO:</label>
+                <input
+                    type="range"
+                    id="tempoSlider"
+                    min="60"
+                    max="180"
+                    value="120"
+                />
+                <span id="tempoValue">120 BPM</span>
+            </div>
+
+            <div class="sequencer" id="sequencer">
+                <!-- Tracks will be generated here -->
+            </div>
+
+            <div class="waveform-container">
+                <h3 class="waveform-title">WAVEFORM ANALYZER</h3>
+                <canvas class="waveform" id="waveform"></canvas>
+            </div>
+        </div>
+
+        <script>
+            class MusicLoopMaker {
+                constructor() {
+                    this.audioContext = null;
+                    this.isPlaying = false;
+                    this.currentStep = 0;
+                    this.tempo = 120;
+                    this.stepInterval = null;
+                    this.analyser = null;
+                    this.dataArray = null;
+                    this.canvas = null;
+                    this.canvasCtx = null;
+                    this.mediaRecorder = null;
+                    this.recordedChunks = [];
+
+                    this.tracks = [
+                        {
+                            name: "KICK",
+                            sound: "kick",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 36,
+                        },
+                        {
+                            name: "SNARE",
+                            sound: "snare",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 38,
+                        },
+                        {
+                            name: "HI-HAT",
+                            sound: "hihat",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 42,
+                        },
+                        {
+                            name: "OPEN HAT",
+                            sound: "openhat",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 46,
+                        },
+                        {
+                            name: "PERC 1",
+                            sound: "perc1",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 50,
+                        },
+                        {
+                            name: "PERC 2",
+                            sound: "perc2",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 54,
+                        },
+                        {
+                            name: "BASS",
+                            sound: "bass",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 48,
+                        },
+                        {
+                            name: "LEAD",
+                            sound: "lead",
+                            pattern: new Array(16).fill(false),
+                            midiNote: 69,
+                        },
+                    ];
+
+                    this.init();
+                }
+
+                async init() {
+                    this.audioContext = new (window.AudioContext ||
+                        window.webkitAudioContext)();
+                    this.setupAnalyser();
+                    this.createSounds();
+                    this.setupUI();
+                    this.setupWaveform();
+                    this.drawWaveform();
+                }
+
+                setupAnalyser() {
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.connect(this.audioContext.destination);
+                    this.analyser.fftSize = 256;
+                    this.dataArray = new Uint8Array(
+                        this.analyser.frequencyBinCount,
+                    );
+                }
+
+                createSounds() {
+                    this.sounds = {};
+
+                    // Create different synthetic sounds
+                    this.sounds.kick = () => this.createKick();
+                    this.sounds.snare = () => this.createSnare();
+                    this.sounds.hihat = () => this.createHiHat();
+                    this.sounds.openhat = () => this.createOpenHat();
+                    this.sounds.perc1 = () => this.createPerc1();
+                    this.sounds.perc2 = () => this.createPerc2();
+                    this.sounds.bass = () => this.createBass();
+                    this.sounds.lead = () => this.createLead();
+                }
+
+                createKick() {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
+
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(
+                        60,
+                        this.audioContext.currentTime,
+                    );
+                    osc.frequency.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.5,
+                    );
+
+                    filter.type = "lowpass";
+                    filter.frequency.value = 100;
+
+                    gain.gain.setValueAtTime(
+                        0.8,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.5,
+                    );
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.analyser);
+
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.5);
+                }
+
+                createSnare() {
+                    const noise = this.audioContext.createBufferSource();
+                    const noiseBuffer = this.audioContext.createBuffer(
+                        1,
+                        this.audioContext.sampleRate * 0.2,
+                        this.audioContext.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < output.length; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    noise.buffer = noiseBuffer;
+
+                    const gain = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.value = 200;
+
+                    gain.gain.setValueAtTime(
+                        0.6,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.2,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.analyser);
+
+                    noise.start();
+                    noise.stop(this.audioContext.currentTime + 0.2);
+                }
+
+                createHiHat() {
+                    const noise = this.audioContext.createBufferSource();
+                    const noiseBuffer = this.audioContext.createBuffer(
+                        1,
+                        this.audioContext.sampleRate * 0.1,
+                        this.audioContext.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < output.length; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    noise.buffer = noiseBuffer;
+
+                    const gain = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.value = 8000;
+
+                    gain.gain.setValueAtTime(
+                        0.3,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.1,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.analyser);
+
+                    noise.start();
+                    noise.stop(this.audioContext.currentTime + 0.1);
+                }
+
+                createOpenHat() {
+                    const noise = this.audioContext.createBufferSource();
+                    const noiseBuffer = this.audioContext.createBuffer(
+                        1,
+                        this.audioContext.sampleRate * 0.3,
+                        this.audioContext.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < output.length; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    noise.buffer = noiseBuffer;
+
+                    const gain = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.value = 6000;
+
+                    gain.gain.setValueAtTime(
+                        0.4,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.3,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.analyser);
+
+                    noise.start();
+                    noise.stop(this.audioContext.currentTime + 0.3);
+                }
+
+                createPerc1() {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(
+                        200,
+                        this.audioContext.currentTime,
+                    );
+                    osc.frequency.exponentialRampToValueAtTime(
+                        50,
+                        this.audioContext.currentTime + 0.1,
+                    );
+
+                    gain.gain.setValueAtTime(
+                        0.5,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.1,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(this.analyser);
+
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.1);
+                }
+
+                createPerc2() {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(
+                        400,
+                        this.audioContext.currentTime,
+                    );
+                    osc.frequency.exponentialRampToValueAtTime(
+                        100,
+                        this.audioContext.currentTime + 0.15,
+                    );
+
+                    gain.gain.setValueAtTime(
+                        0.4,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.15,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(this.analyser);
+
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.15);
+                }
+
+                createBass() {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    const filter = this.audioContext.createBiquadFilter();
+
+                    osc.type = "square";
+                    osc.frequency.value = 80;
+
+                    filter.type = "lowpass";
+                    filter.frequency.value = 200;
+
+                    gain.gain.setValueAtTime(
+                        0.6,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.3,
+                    );
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.analyser);
+
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.3);
+                }
+
+                createLead() {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = "square";
+                    osc.frequency.value = 440;
+
+                    gain.gain.setValueAtTime(
+                        0.3,
+                        this.audioContext.currentTime,
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.01,
+                        this.audioContext.currentTime + 0.2,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(this.analyser);
+
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.2);
+                }
+
+                setupUI() {
+                    const sequencer = document.getElementById("sequencer");
+
+                    this.tracks.forEach((track, trackIndex) => {
+                        const trackElement = document.createElement("div");
+                        trackElement.className = "track";
+
+                        const label = document.createElement("div");
+                        label.className = "track-label";
+                        label.textContent = track.name;
+
+                        const steps = document.createElement("div");
+                        steps.className = "steps";
+
+                        for (let i = 0; i < 16; i++) {
+                            const step = document.createElement("div");
+                            step.className = "step";
+                            step.dataset.track = trackIndex;
+                            step.dataset.step = i;
+
+                            step.addEventListener("click", () => {
+                                track.pattern[i] = !track.pattern[i];
+                                step.classList.toggle(
+                                    "active",
+                                    track.pattern[i],
+                                );
+
+                                // Play sound preview
+                                if (track.pattern[i]) {
+                                    this.sounds[track.sound]();
+                                }
+                            });
+
+                            steps.appendChild(step);
+                        }
+
+                        trackElement.appendChild(label);
+                        trackElement.appendChild(steps);
+                        sequencer.appendChild(trackElement);
+                    });
+
+                    // Setup controls
+                    document
+                        .getElementById("playBtn")
+                        .addEventListener("click", () => this.play());
+                    document
+                        .getElementById("pauseBtn")
+                        .addEventListener("click", () => this.pause());
+                    document
+                        .getElementById("stopBtn")
+                        .addEventListener("click", () => this.stop());
+                    document
+                        .getElementById("clearBtn")
+                        .addEventListener("click", () => this.clear());
+                    document
+                        .getElementById("exportMidiBtn")
+                        .addEventListener("click", () => this.exportMIDI());
+                    document
+                        .getElementById("exportAudioBtn")
+                        .addEventListener("click", () => this.exportAudio());
+
+                    const tempoSlider = document.getElementById("tempoSlider");
+                    const tempoValue = document.getElementById("tempoValue");
+
+                    tempoSlider.addEventListener("input", (e) => {
+                        this.tempo = parseInt(e.target.value);
+                        tempoValue.textContent = `${this.tempo} BPM`;
+
+                        if (this.isPlaying) {
+                            this.stop();
+                            this.play();
+                        }
+                    });
+                }
+
+                setupWaveform() {
+                    this.canvas = document.getElementById("waveform");
+                    this.canvasCtx = this.canvas.getContext("2d");
+                    this.canvas.width = this.canvas.offsetWidth;
+                    this.canvas.height = this.canvas.offsetHeight;
+
+                    window.addEventListener("resize", () => {
+                        this.canvas.width = this.canvas.offsetWidth;
+                        this.canvas.height = this.canvas.offsetHeight;
+                    });
+                }
+
+                drawWaveform() {
+                    requestAnimationFrame(() => this.drawWaveform());
+
+                    this.analyser.getByteFrequencyData(this.dataArray);
+
+                    this.canvasCtx.fillStyle = "#000";
+                    this.canvasCtx.fillRect(
+                        0,
+                        0,
+                        this.canvas.width,
+                        this.canvas.height,
+                    );
+
+                    const barWidth =
+                        (this.canvas.width / this.dataArray.length) * 2.5;
+                    let barHeight;
+                    let x = 0;
+
+                    for (let i = 0; i < this.dataArray.length; i++) {
+                        barHeight =
+                            (this.dataArray[i] / 255) * this.canvas.height;
+
+                        const r = barHeight + 25 * (i / this.dataArray.length);
+                        const g = 250 * (i / this.dataArray.length);
+                        const b = 50;
+
+                        this.canvasCtx.fillStyle = `rgb(${r},${g},${b})`;
+                        this.canvasCtx.fillRect(
+                            x,
+                            this.canvas.height - barHeight,
+                            barWidth,
+                            barHeight,
+                        );
+
+                        x += barWidth + 1;
+                    }
+                }
+
+                play() {
+                    if (this.audioContext.state === "suspended") {
+                        this.audioContext.resume();
+                    }
+
+                    if (!this.isPlaying) {
+                        this.isPlaying = true;
+                        this.startLoop();
+                    }
+                }
+
+                pause() {
+                    this.isPlaying = false;
+                    if (this.stepInterval) {
+                        clearInterval(this.stepInterval);
+                    }
+                }
+
+                stop() {
+                    this.isPlaying = false;
+                    this.currentStep = 0;
+                    if (this.stepInterval) {
+                        clearInterval(this.stepInterval);
+                    }
+                    this.updateStepDisplay();
+                }
+
+                clear() {
+                    this.tracks.forEach((track) => {
+                        track.pattern.fill(false);
+                    });
+
+                    document.querySelectorAll(".step").forEach((step) => {
+                        step.classList.remove("active");
+                    });
+
+                    this.stop();
+                }
+
+                startLoop() {
+                    const stepTime = (60 / this.tempo / 4) * 1000; // 16th notes
+
+                    this.stepInterval = setInterval(() => {
+                        if (this.isPlaying) {
+                            this.playStep();
+                            this.currentStep = (this.currentStep + 1) % 16;
+                            this.updateStepDisplay();
+                        }
+                    }, stepTime);
+                }
+
+                playStep() {
+                    this.tracks.forEach((track) => {
+                        if (track.pattern[this.currentStep]) {
+                            this.sounds[track.sound]();
+                        }
+                    });
+                }
+
+                updateStepDisplay() {
+                    document
+                        .querySelectorAll(".step")
+                        .forEach((step, index) => {
+                            const stepIndex = index % 16;
+                            step.classList.toggle(
+                                "playing",
+                                stepIndex === this.currentStep &&
+                                    this.isPlaying,
+                            );
+                        });
+                }
+
+                // MIDI Export Functions
+                exportMIDI() {
+                    const statusEl = document.getElementById("exportStatus");
+                    statusEl.textContent = "Generating MIDI file...";
+
+                    try {
+                        // Check if there are any active patterns
+                        const hasPattern = this.tracks.some((track) =>
+                            track.pattern.some((step) => step),
+                        );
+                        if (!hasPattern) {
+                            statusEl.textContent =
+                                "Please create a pattern first!";
+                            setTimeout(() => (statusEl.textContent = ""), 3000);
+                            return;
+                        }
+
+                        const midiData = this.generateMIDI();
+                        console.log(
+                            "MIDI data generated, size:",
+                            midiData.length,
+                            "bytes",
+                        );
+                        this.downloadFile(
+                            midiData,
+                            "loop-maker-export.mid",
+                            "audio/midi",
+                        );
+                        statusEl.textContent = "MIDI file downloaded!";
+                        setTimeout(() => (statusEl.textContent = ""), 3000);
+                    } catch (error) {
+                        statusEl.textContent =
+                            "Error exporting MIDI: " + error.message;
+                        console.error("MIDI export error:", error);
+                        setTimeout(() => (statusEl.textContent = ""), 5000);
+                    }
+                }
+
+                generateMIDI() {
+                    // Create MIDI file structure
+                    const ticksPerQuarter = 480;
+                    const microsecondsPerQuarter = 60000000 / this.tempo;
+
+                    // MIDI Header
+                    const header = new Uint8Array([
+                        0x4d,
+                        0x54,
+                        0x68,
+                        0x64, // "MThd"
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x06, // Header length
+                        0x00,
+                        0x01, // Format 1
+                        0x00,
+                        0x01, // 1 track
+                        0x01,
+                        0xe0, // Ticks per quarter note (480)
+                    ]);
+
+                    // Track events
+                    const events = [];
+
+                    // Tempo event
+                    events.push([
+                        0,
+                        0xff,
+                        0x51,
+                        0x03,
+                        (microsecondsPerQuarter >> 16) & 0xff,
+                        (microsecondsPerQuarter >> 8) & 0xff,
+                        microsecondsPerQuarter & 0xff,
+                    ]);
+
+                    // Generate note events for each track
+                    const ticksPerStep = ticksPerQuarter / 4; // 16th notes
+
+                    this.tracks.forEach((track, trackIndex) => {
+                        track.pattern.forEach((active, stepIndex) => {
+                            if (active) {
+                                const time = stepIndex * ticksPerStep;
+                                const noteLength = ticksPerStep / 2; // Short notes
+
+                                // Note on
+                                events.push([
+                                    time,
+                                    0x90 | trackIndex,
+                                    track.midiNote,
+                                    127,
+                                ]);
+                                // Note off
+                                events.push([
+                                    time + noteLength,
+                                    0x80 | trackIndex,
+                                    track.midiNote,
+                                    0,
+                                ]);
+                            }
+                        });
+                    });
+
+                    // Sort events by time
+                    events.sort((a, b) => a[0] - b[0]);
+
+                    // Convert to MIDI delta times
+                    let lastTime = 0;
+                    const trackData = [];
+
+                    events.forEach((event) => {
+                        const deltaTime = event[0] - lastTime;
+                        lastTime = event[0];
+
+                        // Add variable length delta time
+                        trackData.push(...this.encodeVariableLength(deltaTime));
+                        // Add event data
+                        trackData.push(...event.slice(1));
+                    });
+
+                    // End of track
+                    trackData.push(0x00, 0xff, 0x2f, 0x00);
+
+                    // Track header
+                    const trackHeader = new Uint8Array([
+                        0x4d,
+                        0x54,
+                        0x72,
+                        0x6b, // "MTrk"
+                        (trackData.length >> 24) & 0xff,
+                        (trackData.length >> 16) & 0xff,
+                        (trackData.length >> 8) & 0xff,
+                        trackData.length & 0xff,
+                    ]);
+
+                    // Combine header + track
+                    const midiFile = new Uint8Array(
+                        header.length + trackHeader.length + trackData.length,
+                    );
+                    midiFile.set(header, 0);
+                    midiFile.set(trackHeader, header.length);
+                    midiFile.set(trackData, header.length + trackHeader.length);
+
+                    return midiFile;
+                }
+
+                encodeVariableLength(value) {
+                    const bytes = [];
+                    bytes.push(value & 0x7f);
+                    value >>= 7;
+
+                    while (value > 0) {
+                        bytes.unshift((value & 0x7f) | 0x80);
+                        value >>= 7;
+                    }
+
+                    return bytes;
+                }
+
+                // Audio Export Functions
+                async exportAudio() {
+                    const statusEl = document.getElementById("exportStatus");
+                    const exportBtn = document.getElementById("exportAudioBtn");
+
+                    // Check if there are any active patterns
+                    const hasPattern = this.tracks.some((track) =>
+                        track.pattern.some((step) => step),
+                    );
+                    if (!hasPattern) {
+                        statusEl.textContent = "Please create a pattern first!";
+                        setTimeout(() => (statusEl.textContent = ""), 3000);
+                        return;
+                    }
+
+                    statusEl.textContent = "Recording audio... Please wait...";
+                    exportBtn.disabled = true;
+
+                    try {
+                        // Check if MediaRecorder is supported
+                        if (!window.MediaRecorder) {
+                            throw new Error(
+                                "Audio recording not supported in this browser",
+                            );
+                        }
+
+                        await this.recordAudio();
+                    } catch (error) {
+                        statusEl.textContent = "Error: " + error.message;
+                        console.error("Audio export error:", error);
+                        setTimeout(() => (statusEl.textContent = ""), 5000);
+                    } finally {
+                        exportBtn.disabled = false;
+                    }
+                }
+
+                async recordAudio() {
+                    return new Promise((resolve, reject) => {
+                        try {
+                            // Create offline audio context for better recording
+                            const sampleRate = 44100;
+                            const duration = 8; // 8 seconds (2 loops at 120 BPM)
+                            const bufferLength = sampleRate * duration;
+
+                            const offlineContext =
+                                new (window.OfflineAudioContext ||
+                                    window.webkitOfflineAudioContext)(
+                                    2,
+                                    bufferLength,
+                                    sampleRate,
+                                );
+
+                            // Calculate timing
+                            const stepDuration = 60 / this.tempo / 4; // Duration of each 16th note in seconds
+                            const loopDuration = stepDuration * 16; // Duration of one complete loop
+
+                            // Schedule all sounds
+                            let currentTime = 0;
+                            const numberOfLoops = Math.floor(
+                                duration / loopDuration,
+                            );
+
+                            for (let loop = 0; loop < numberOfLoops; loop++) {
+                                for (let step = 0; step < 16; step++) {
+                                    const stepTime =
+                                        currentTime + step * stepDuration;
+
+                                    this.tracks.forEach((track) => {
+                                        if (track.pattern[step]) {
+                                            this.scheduleOfflineSound(
+                                                track.sound,
+                                                offlineContext,
+                                                stepTime,
+                                            );
+                                        }
+                                    });
+                                }
+                                currentTime += loopDuration;
+                            }
+
+                            // Render audio
+                            offlineContext
+                                .startRendering()
+                                .then((buffer) => {
+                                    // Convert to WAV
+                                    const wavBlob =
+                                        this.audioBufferToWav(buffer);
+                                    console.log(
+                                        "Audio rendered, size:",
+                                        wavBlob.size,
+                                        "bytes",
+                                    );
+
+                                    // Download
+                                    this.downloadFile(
+                                        wavBlob,
+                                        "loop-maker-export.wav",
+                                        "audio/wav",
+                                    );
+
+                                    const statusEl =
+                                        document.getElementById("exportStatus");
+                                    statusEl.textContent =
+                                        "Audio file downloaded!";
+                                    setTimeout(
+                                        () => (statusEl.textContent = ""),
+                                        3000,
+                                    );
+
+                                    resolve();
+                                })
+                                .catch(reject);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+                }
+
+                scheduleOfflineSound(soundType, context, startTime) {
+                    switch (soundType) {
+                        case "kick":
+                            this.scheduleOfflineKick(context, startTime);
+                            break;
+                        case "snare":
+                            this.scheduleOfflineSnare(context, startTime);
+                            break;
+                        case "hihat":
+                            this.scheduleOfflineHiHat(context, startTime);
+                            break;
+                        case "openhat":
+                            this.scheduleOfflineOpenHat(context, startTime);
+                            break;
+                        case "perc1":
+                            this.scheduleOfflinePerc1(context, startTime);
+                            break;
+                        case "perc2":
+                            this.scheduleOfflinePerc2(context, startTime);
+                            break;
+                        case "bass":
+                            this.scheduleOfflineBass(context, startTime);
+                            break;
+                        case "lead":
+                            this.scheduleOfflineLead(context, startTime);
+                            break;
+                    }
+                }
+
+                scheduleOfflineKick(context, startTime) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+                    const filter = context.createBiquadFilter();
+
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(60, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(
+                        0.1,
+                        startTime + 0.5,
+                    );
+
+                    filter.type = "lowpass";
+                    filter.frequency.setValueAtTime(100, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.8, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.5,
+                    );
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(context.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.5);
+                }
+
+                scheduleOfflineSnare(context, startTime) {
+                    const bufferSize = context.sampleRate * 0.2;
+                    const noiseBuffer = context.createBuffer(
+                        1,
+                        bufferSize,
+                        context.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = context.createBufferSource();
+                    noise.buffer = noiseBuffer;
+
+                    const gain = context.createGain();
+                    const filter = context.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.setValueAtTime(200, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.6, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.2,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(context.destination);
+
+                    noise.start(startTime);
+                    noise.stop(startTime + 0.2);
+                }
+
+                scheduleOfflineHiHat(context, startTime) {
+                    const bufferSize = context.sampleRate * 0.1;
+                    const noiseBuffer = context.createBuffer(
+                        1,
+                        bufferSize,
+                        context.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = context.createBufferSource();
+                    noise.buffer = noiseBuffer;
+
+                    const gain = context.createGain();
+                    const filter = context.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.setValueAtTime(8000, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.3, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.1,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(context.destination);
+
+                    noise.start(startTime);
+                    noise.stop(startTime + 0.1);
+                }
+
+                scheduleOfflineOpenHat(context, startTime) {
+                    const bufferSize = context.sampleRate * 0.3;
+                    const noiseBuffer = context.createBuffer(
+                        1,
+                        bufferSize,
+                        context.sampleRate,
+                    );
+                    const output = noiseBuffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = context.createBufferSource();
+                    noise.buffer = noiseBuffer;
+
+                    const gain = context.createGain();
+                    const filter = context.createBiquadFilter();
+
+                    filter.type = "highpass";
+                    filter.frequency.setValueAtTime(6000, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.4, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.3,
+                    );
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(context.destination);
+
+                    noise.start(startTime);
+                    noise.stop(startTime + 0.3);
+                }
+
+                scheduleOfflinePerc1(context, startTime) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(200, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(
+                        50,
+                        startTime + 0.1,
+                    );
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.5, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.1,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(context.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.1);
+                }
+
+                scheduleOfflinePerc2(context, startTime) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(400, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(
+                        100,
+                        startTime + 0.15,
+                    );
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.4, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.15,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(context.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.15);
+                }
+
+                scheduleOfflineBass(context, startTime) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+                    const filter = context.createBiquadFilter();
+
+                    osc.type = "square";
+                    osc.frequency.setValueAtTime(80, startTime);
+
+                    filter.type = "lowpass";
+                    filter.frequency.setValueAtTime(200, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.6, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.3,
+                    );
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(context.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.3);
+                }
+
+                scheduleOfflineLead(context, startTime) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+
+                    osc.type = "square";
+                    osc.frequency.setValueAtTime(440, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.setValueAtTime(0.3, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.2,
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(context.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.2);
+                }
+
+                audioBufferToWav(buffer) {
+                    const length = buffer.length;
+                    const numberOfChannels = buffer.numberOfChannels;
+                    const sampleRate = buffer.sampleRate;
+                    const bytesPerSample = 2;
+                    const blockAlign = numberOfChannels * bytesPerSample;
+                    const byteRate = sampleRate * blockAlign;
+                    const dataSize = length * blockAlign;
+                    const bufferSize = 44 + dataSize;
+
+                    const arrayBuffer = new ArrayBuffer(bufferSize);
+                    const view = new DataView(arrayBuffer);
+
+                    // WAV header
+                    const writeString = (offset, string) => {
+                        for (let i = 0; i < string.length; i++) {
+                            view.setUint8(offset + i, string.charCodeAt(i));
+                        }
+                    };
+
+                    writeString(0, "RIFF");
+                    view.setUint32(4, bufferSize - 8, true);
+                    writeString(8, "WAVE");
+                    writeString(12, "fmt ");
+                    view.setUint32(16, 16, true);
+                    view.setUint16(20, 1, true);
+                    view.setUint16(22, numberOfChannels, true);
+                    view.setUint32(24, sampleRate, true);
+                    view.setUint32(28, byteRate, true);
+                    view.setUint16(32, blockAlign, true);
+                    view.setUint16(34, bytesPerSample * 8, true);
+                    writeString(36, "data");
+                    view.setUint32(40, dataSize, true);
+
+                    // Convert audio data
+                    let offset = 44;
+                    for (let i = 0; i < length; i++) {
+                        for (
+                            let channel = 0;
+                            channel < numberOfChannels;
+                            channel++
+                        ) {
+                            const sample = Math.max(
+                                -1,
+                                Math.min(1, buffer.getChannelData(channel)[i]),
+                            );
+                            view.setInt16(offset, sample * 0x7fff, true);
+                            offset += 2;
+                        }
+                    }
+
+                    return new Blob([arrayBuffer], { type: "audio/wav" });
+                }
+
+                downloadFile(data, filename, mimeType) {
+                    try {
+                        const blob =
+                            data instanceof Blob
+                                ? data
+                                : new Blob([data], { type: mimeType });
+                        console.log(
+                            "Creating download for:",
+                            filename,
+                            "Size:",
+                            blob.size,
+                            "bytes",
+                        );
+
+                        // Create download link
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.style.display = "none";
+                        link.href = url;
+                        link.download = filename;
+
+                        // Add to document, click, and cleanup
+                        document.body.appendChild(link);
+                        link.click();
+
+                        // Cleanup after a short delay
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        }, 100);
+
+                        console.log("Download triggered for:", filename);
+                    } catch (error) {
+                        console.error("Download failed:", error);
+                        throw new Error(
+                            "Failed to download file: " + error.message,
+                        );
+                    }
+                }
+            }
+
+            // Initialize the app
+            window.addEventListener("load", () => {
+                new MusicLoopMaker();
+            });
+        </script>
+    </body>
+</html>

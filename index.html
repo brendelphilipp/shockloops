@@ -43,6 +43,52 @@
                 margin-bottom: 30px;
                 flex-wrap: wrap;
             }
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .dropbtn {
+                background: linear-gradient(45deg, #444, #222);
+                border: 2px solid #00ff41;
+                color: #00ff41;
+                padding: 12px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-family: inherit;
+                font-weight: bold;
+                transition: all 0.3s;
+                font-size: 16px;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #1a1a2e;
+                min-width: 160px;
+                box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+                z-index: 1;
+                border: 2px solid #00ff41;
+                border-radius: 6px;
+                overflow: hidden;
+            }
+
+            .dropdown-content a {
+                color: #00ff41;
+                padding: 10px 16px;
+                text-decoration: none;
+                display: block;
+                transition: background 0.3s;
+            }
+
+            .dropdown-content a:hover {
+                background-color: #00ff41;
+                color: #1a1a2e;
+            }
+
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
 
             button {
                 background: linear-gradient(45deg, #0066cc, #004499);
@@ -210,11 +256,28 @@
 
             <div class="controls">
                 <button id="playBtn">▶️ PLAY</button>
-                <button id="pauseBtn">⏸️ PAUSE</button>
+                <!-- <button id="pauseBtn">⏸️ PAUSE</button> -->
                 <button id="stopBtn">⏹️ STOP</button>
                 <button id="clearBtn">🗑️ CLEAR</button>
                 <button id="exportMidiBtn">💾 EXPORT MIDI</button>
                 <button id="exportAudioBtn">🎵 EXPORT AUDIO</button>
+                <div class="dropdown">
+                    <button class="dropbtn">⬇️ DOWNLOADS</button>
+                    <div class="dropdown-content" id="compositionsDropdown">
+                        <a
+                            href="compositions/FRESH.mp3"
+                            target="_blank"
+                            download
+                            >FRESH.mp3</a
+                        >
+                        <a
+                            href="compositions/TENSION.mp3"
+                            target="_blank"
+                            download
+                            >TENSION.mp3</a
+                        >
+                    </div>
+                </div>
             </div>
 
             <div id="exportStatus" class="export-status"></div>

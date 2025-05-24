@@ -373,11 +373,57 @@
                     this.init();
                 }
 
+                loadPreset() {
+                    // Kick on 1, 5, 9, 13
+                    this.tracks[0].pattern = [
+                        true,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        false,
+                        false,
+                    ];
+
+                    // Snare on 5 and 13
+                    this.tracks[1].pattern = [
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        false,
+                        false,
+                    ];
+
+                    // Hi-Hat on all steps
+                    this.tracks[2].pattern = Array(16).fill(true);
+                }
+
                 async init() {
                     this.audioContext = new (window.AudioContext ||
                         window.webkitAudioContext)();
                     this.setupAnalyser();
                     this.createSounds();
+                    this.loadPreset();
                     this.setupUI();
                     this.setupWaveform();
                     this.drawWaveform();
@@ -685,6 +731,7 @@
                             step.className = "step";
                             step.dataset.track = trackIndex;
                             step.dataset.step = i;
+                            step.classList.toggle("active", track.pattern[i]);
 
                             step.addEventListener("click", () => {
                                 track.pattern[i] = !track.pattern[i];
